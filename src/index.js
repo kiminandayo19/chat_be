@@ -1,17 +1,16 @@
-import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import routes from '@routes/index.js';
-dotenv.config({
-  path: '.env',
-});
+import configs from '@utils/config.js';
+import { verifyAuth, verifyHeaders } from '@middlewares/headersMiddleware.js';
 
-// eslint-disable-next-line no-undef
-const port = process.env.PORT || 3000;
+const port = configs.port || 3000;
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(verifyHeaders);
+app.use(verifyAuth);
 app.use(routes);
 
 app.listen(port, () => {

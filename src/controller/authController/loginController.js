@@ -1,6 +1,7 @@
 import execQuery from '@services/db.js';
 import bcrypt from 'bcrypt';
 import { createTimestamp } from '@utils/dateFormat.js';
+import { generateJwt } from '@utils/jwt.js';
 
 const verifyPassword = async (password, hash) => {
   const match = await bcrypt.compare(password, hash);
@@ -30,7 +31,7 @@ const loginController = async (req, res) => {
         data: [],
       });
 
-    const { user_uuid: uuid, username: user, email, phone_number: phoneNumber, password: pass } = result[0];
+    const { user_id: uuid, username: user, email, phone_number: phoneNumber, password: pass } = result[0];
 
     const isPasswordMatch = await verifyPassword(password, pass);
     if (!isPasswordMatch)
@@ -39,6 +40,8 @@ const loginController = async (req, res) => {
         message: 'Unauthorized. Invalid password',
         data: [],
       });
+
+    const tok = await generateJwt(uuid);
 
     return res.status(200).json({
       code: 200,
@@ -49,6 +52,7 @@ const loginController = async (req, res) => {
           username: user,
           email,
           phoneNumber,
+          tokenSession: tok,
           timestamp: createTimestamp(),
         },
       ],

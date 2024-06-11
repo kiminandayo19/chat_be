@@ -1,9 +1,8 @@
-/* eslint-disable no-undef */
-import 'dotenv/config';
 import CryptoJS from 'crypto-js';
+import configs from '@utils/config.js';
 
-const secret = `${process.env.SECRET_KEY}`;
-const salt = `${process.env.SALT}`;
+const secret = `${configs.secretKey}`;
+const salt = `${configs.salt}`;
 
 const key = CryptoJS.PBKDF2(secret, salt, {
   keySize: 256 / 32,

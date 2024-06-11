@@ -73,7 +73,7 @@ const registerController = async (req, res) => {
 
     const params = [newUserUuid, username, encryptedEmail, encryptedPhoneNumber, passHashed, timestamp, timestamp];
     const query =
-      'INSERT INTO mst_user (user_uuid, username, email, phone_number, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      'INSERT INTO mst_user (user_id, username, email, phone_number, password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
     const result = await execQuery(query, params);
     if (result?.affectedRows !== 1)

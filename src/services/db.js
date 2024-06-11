@@ -1,13 +1,12 @@
-/* eslint-disable no-undef */
 import mysql from 'mysql';
-import 'dotenv/config';
+import configs from '@utils/config.js';
 
 const pool = mysql.createPool({
   connectionLimit: 10,
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
+  host: configs.dbHost,
+  user: configs.dbUser,
+  password: configs.dbPass,
+  database: configs.dbName,
 });
 
 const execQuery = (query, params) => {
