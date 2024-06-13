@@ -18,6 +18,8 @@ const configs = {
   jwtPubKey: process.env.JWT_PUB_KEY,
   jwtPvtKey: process.env.JWT_PVT_KEY,
   jwtAlg: process.env.JWT_ALG,
+  mongoUrl: process.env.MONGO_URL,
+  mongoDb: process.env.MONGO_DB,
 };
 
 export default configs;
