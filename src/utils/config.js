@@ -20,6 +20,10 @@ const configs = {
   jwtAlg: process.env.JWT_ALG,
   mongoUrl: process.env.MONGO_URL,
   mongoDb: process.env.MONGO_DB,
+  headerAllowOrigin: process.env.HEADERS_ORIGIN,
+  headerFrameOptions: process.env.HEADERS_OPTIONS,
+  headerContentOptions: process.env.HEADERS_CONTENT,
+  headerXSS: process.env.HEADERS_XSS,
 };
 
 export default configs;

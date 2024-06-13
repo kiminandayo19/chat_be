@@ -20,10 +20,10 @@ const verifyHeaders = (req, res, next) => {
     }
 
     if (
-      headers['access-control-allow-origin'] !== '*' ||
-      headers['x-frame-options'] !== 'deny' ||
-      headers['x-content-type-options'] !== 'nosniff' ||
-      headers['x-xss-protection'] !== '1; mode=block'
+      headers['access-control-allow-origin'] !== configs.headerAllowOrigin ||
+      headers['x-frame-options'] !== configs.headerFrameOptions ||
+      headers['x-content-type-options'] !== configs.headerContentOptions ||
+      headers['x-xss-protection'] !== configs.headerXSS
     ) {
       return res.status(401).json({
         code: 401,
