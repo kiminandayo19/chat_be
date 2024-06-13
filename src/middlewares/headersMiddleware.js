@@ -34,6 +34,12 @@ const verifyHeaders = (req, res, next) => {
     return next();
   } catch (e) {
     console.log(`Error Verify Headers: ${e}`);
+    if (e?.includes('timestamp check failed'))
+      return res.status(401).json({
+        code: 401,
+        message: 'Unauthorized',
+        data: [],
+      });
     return res.status(500).json({
       code: 500,
       message: 'Internal Server Error',
@@ -102,6 +108,12 @@ const verifyAuth = async (req, res, next) => {
     return next();
   } catch (e) {
     console.log(`Error Verify Auth: ${e}`);
+    if (e?.name === 'JWTExpired')
+      return res.status(401).json({
+        code: 401,
+        message: 'Unauthorized. Session expired.',
+        data: [],
+      });
     return res.status(500).json({
       code: 500,
       message: 'Internal Server Error',

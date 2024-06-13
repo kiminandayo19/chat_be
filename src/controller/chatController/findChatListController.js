@@ -1,30 +1,27 @@
 import mongod from '@services/mongodb.js';
+import execQuery from '@services/db.js';
 
 const getChatListController = async (req, res) => {
   try {
-    const { uuid } = req.body;
-    const db = await mongod();
-    const collections = await db.listCollections().toArray();
-    const chat_rooms = [];
+    const { uuid } = req?.uuid;
+    if (!uuid)
+      return res.status(400).json({
+        code: 400,
+        message: 'Bad Request. UUID is missing.',
+        data: [],
+      });
 
-    for (const collectionInfo of collections) {
-      if (!collectionInfo?.name?.includes('room')) continue;
-      const collection = db.collection(collectionInfo.name);
-      const document = await collection.find({}).toArray();
-      if (document.length > 0 && document.user_id1 === uuid) {
-        chat_rooms.push({
-          room_id: collectionInfo.name,
-          created_at: document[0].createdAt,
-        });
-      }
-    }
+    const query =
+      'SELECT cl.room_id, u.username FROM mst_chatlist cl INNER JOIN mst_user u ON cl.user_id2 = u.user_id WHERE cl.user_id1 = ?';
+    const data = [uuid];
+    const result = await execQuery(query, data);
     return res.status(200).json({
       code: 200,
-      message: chat_rooms?.length > 0 ? 'Success get list rooms' : 'No Rooms Found',
-      data: chat_rooms,
+      message: 'Success Get List',
+      data: result,
     });
   } catch (err) {
-    console.log(`Error Get List Rooms:${err}`);
+    console.log(`Err Get Chat List:${err}`);
     return res.status(501).json({
       code: 501,
       message: 'Internal Server Error',
