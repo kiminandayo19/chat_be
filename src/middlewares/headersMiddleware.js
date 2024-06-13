@@ -2,123 +2,64 @@ import { isJwtValid, verifyJwt } from '@utils/jwt.js';
 import execQuery from '@services/db.js';
 import configs from '@utils/config.js';
 
+const requiredHeaders = [
+  { name: 'access-control-allow-origin', configKey: 'headerAllowOrigin' },
+  { name: 'x-frame-options', configKey: 'headerFrameOptions' },
+  { name: 'x-content-type-options', configKey: 'headerContentOptions' },
+  { name: 'x-xss-protection', configKey: 'headerXSS' },
+];
+const excludedBearerPath = ['/rest/v1/auth/login', '/rest/v1/auth/register'];
+
+const createErrorResponse = (res, statusCode, message) => {
+  return res.status(statusCode).json({
+    code: statusCode,
+    message,
+    data: [],
+  });
+};
+
 const verifyHeaders = (req, res, next) => {
   try {
-    const headers = req.headers;
-
-    if (
-      !headers['access-control-allow-origin'] ||
-      !headers['x-frame-options'] ||
-      !headers['x-content-type-options'] ||
-      !headers['x-xss-protection']
-    ) {
-      return res.status(401).json({
-        code: 401,
-        message: 'Unauthorized. Invalid headers',
-        data: [],
-      });
+    for (const { name, configKey } of requiredHeaders) {
+      if (!req?.headers[name] || req?.headers[name] !== configs[configKey])
+        return createErrorResponse(res, 401, 'Unauthorized. Invalid Headers.');
     }
-
-    if (
-      headers['access-control-allow-origin'] !== configs.headerAllowOrigin ||
-      headers['x-frame-options'] !== configs.headerFrameOptions ||
-      headers['x-content-type-options'] !== configs.headerContentOptions ||
-      headers['x-xss-protection'] !== configs.headerXSS
-    ) {
-      return res.status(401).json({
-        code: 401,
-        message: 'Unauthorized. Invalid headers',
-        data: [],
-      });
-    }
-    return next();
-  } catch (e) {
-    console.log(`Error Verify Headers: ${e}`);
-    if (e?.includes('timestamp check failed'))
-      return res.status(401).json({
-        code: 401,
-        message: 'Unauthorized',
-        data: [],
-      });
-    return res.status(500).json({
-      code: 500,
-      message: 'Internal Server Error',
-      data: [],
-    });
+    next();
+  } catch (err) {
+    console.log(`Error Verify: ${err}`);
+    const statusCode = err?.includes('timestamp check failed') ? 401 : 501;
+    const message = statusCode === 401 ? 'Unauthorized.' : 'Internal Server Error';
+    return createErrorResponse(res, statusCode, message);
   }
 };
 
-const isAuth = route => route === '/rest/v1/auth/login' || route === '/rest/v1/auth/register';
+const isAuthRoute = route => excludedBearerPath?.includes(route);
 
-const extractJwt = header => {
-  const tok = header['authorization'];
-  return tok?.split('Bearer ')[1];
-};
+const extractJwt = header => header['authorization']?.split('Bearer ')[1];
 
 const verifyAuth = async (req, res, next) => {
   try {
-    if (isAuth(req.originalUrl)) return next();
+    if (isAuthRoute(req?.originalUrl)) return next();
 
-    const tok = extractJwt(req.headers);
-    if (!tok) {
-      return res.status(401).json({
-        code: 401,
-        message: 'Unauthorized. Invalid token',
-        data: [],
-      });
-    }
+    const token = extractJwt(req?.headers);
+    if (!token) return createErrorResponse(res, 401, 'Unauthorized. Invalid Token.');
 
-    const { payload, protectedHeader } = await verifyJwt(tok);
+    const { payload, protectedHeader } = await verifyJwt(token);
+    if (!isJwtValid(payload?.exp)) return createErrorResponse(res, 401, 'Unauthorized. Token Expired.');
+    if (protectedHeader?.alg !== configs?.jwtAlg) return createErrorResponse(res, 401, 'Unauthorized. Unkown Token.');
 
-    if (!isJwtValid(payload.exp))
-      return res.status(401).json({
-        code: 401,
-        message: 'Unauthorized. Token expired',
-        data: [],
-      });
+    const userId = payload?.id;
+    if (!userId) return createErrorResponse(res, 400, 'Bad Request. Missing Id');
 
-    if (protectedHeader.alg !== configs.jwtAlg)
-      return res.status(401).json({
-        code: 401,
-        message: 'Unauthorized. Unknown token',
-        data: [],
-      });
-
-    const id = payload.id ?? null;
-
-    if (!id)
-      return res.status(400).json({
-        code: 400,
-        message: 'Bad Request.',
-        data: [],
-      });
-
-    req.uuid = { uuid: id };
-
-    const query = 'SELECT * FROM mst_user WHERE user_id = ?';
-    const params = [id];
-    const result = await execQuery(query, params);
-    if (result.length === 0)
-      return res.status(401).json({
-        code: 401,
-        message: 'Unauthorized. Unknown user',
-        data: [],
-      });
-
-    return next();
-  } catch (e) {
-    console.log(`Error Verify Auth: ${e}`);
-    if (e?.name === 'JWTExpired')
-      return res.status(401).json({
-        code: 401,
-        message: 'Unauthorized. Session expired.',
-        data: [],
-      });
-    return res.status(500).json({
-      code: 500,
-      message: 'Internal Server Error',
-      data: [],
-    });
+    req?.uuid = { uuid: userId };
+    const result = await execQuery('SELECT * FROM mst_user WHERE user_id = ?', [userId]);
+    if (result?.length === 0) return createErrorResponse(res, 401, 'Unauthorized. Unknown User.');
+    next();
+  } catch (err) {
+    console.log(`Error Veify Auth: ${err}`);
+    const statusCode = err?.name === 'JWTExpired' ? 401 : 501;
+    const message = statusCode === 401 ? 'Unauthorized. Session Expired.' : 'Internal Server Error.';
+    return createErrorResponse(res, statusCode, message);
   }
 };
 
