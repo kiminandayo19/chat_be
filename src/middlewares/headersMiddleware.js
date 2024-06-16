@@ -8,7 +8,12 @@ const requiredHeaders = [
   { name: 'x-content-type-options', configKey: 'headerContentOptions' },
   { name: 'x-xss-protection', configKey: 'headerXSS' },
 ];
-const excludedBearerPath = ['/rest/v1/auth/login', '/rest/v1/auth/register'];
+const excludedBearerPath = [
+  '/rest/v1/auth/login',
+  '/rest/v1/auth/register',
+  '/rest/v1/crypto/encrypt',
+  '/rest/v1/crypto/decrypt',
+];
 
 const createErrorResponse = (res, statusCode, message) => {
   return res.status(statusCode).json({

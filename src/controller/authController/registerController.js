@@ -1,12 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import execQuery from '@services/db.js';
 import { reEmail, rePassword, reUsername } from '@utils/regex.js';
-import { encryptAES, decryptAES } from '@utils/crypto.js';
+import { encryptAES } from '@utils/crypto.js';
 import configs from '@utils/config.js';
 import bcrypt from 'bcrypt';
 
 const hashPassword = async password => {
-  const saltRounds = configs.saltRounds;
+  const saltRounds = Number(configs.saltRound);
   const salt = await bcrypt.genSalt(saltRounds);
   const hash = await bcrypt.hash(password, salt);
   return hash;
@@ -57,8 +57,7 @@ const validate = (username, email, password, phoneNumber) => {
 const registerController = async (req, res) => {
   try {
     const { username, email, password, phoneNumber } = req.body;
-    const decryptedPass = decryptAES(password);
-    const validateMessage = validate(username, email, decryptedPass, phoneNumber);
+    const validateMessage = validate(username, email, password, phoneNumber);
 
     if (validateMessage)
       return res.status(400).json({
@@ -69,7 +68,7 @@ const registerController = async (req, res) => {
 
     const newUserUuid = uuidv4();
     const timestamp = new Date(Date.now());
-    const passHashed = await hashPassword(decryptedPass);
+    const passHashed = await hashPassword(password);
     const encryptedEmail = encryptAES(email);
     const encryptedPhoneNumber = encryptAES(phoneNumber);
 
@@ -95,7 +94,7 @@ const registerController = async (req, res) => {
       ],
     });
   } catch (err) {
-    console.log('err', err.message);
+    console.log('err', err);
     if (err?.message?.includes('Duplicate entry') && err?.message?.includes('email'))
       return res.status(400).json({
         code: 400,
