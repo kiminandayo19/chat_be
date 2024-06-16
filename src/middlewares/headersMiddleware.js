@@ -51,7 +51,7 @@ const verifyAuth = async (req, res, next) => {
     const userId = payload?.id;
     if (!userId) return createErrorResponse(res, 400, 'Bad Request. Missing Id');
 
-    req?.uuid = { uuid: userId };
+    req.uuid = userId;
     const result = await execQuery('SELECT * FROM mst_user WHERE user_id = ?', [userId]);
     if (result?.length === 0) return createErrorResponse(res, 401, 'Unauthorized. Unknown User.');
     next();

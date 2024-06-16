@@ -1,11 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import execQuery from '@services/db.js';
 import { reEmail, rePassword, reUsername } from '@utils/regex.js';
-import { encryptAES } from '@utils/crypto.js';
+import { encryptAES, decryptAES } from '@utils/crypto.js';
+import configs from '@utils/config.js';
 import bcrypt from 'bcrypt';
 
 const hashPassword = async password => {
-  const saltRounds = 10;
+  const saltRounds = configs.saltRounds;
   const salt = await bcrypt.genSalt(saltRounds);
   const hash = await bcrypt.hash(password, salt);
   return hash;
@@ -56,7 +57,8 @@ const validate = (username, email, password, phoneNumber) => {
 const registerController = async (req, res) => {
   try {
     const { username, email, password, phoneNumber } = req.body;
-    const validateMessage = validate(username, email, password, phoneNumber);
+    const decryptedPass = decryptAES(password);
+    const validateMessage = validate(username, email, decryptedPass, phoneNumber);
 
     if (validateMessage)
       return res.status(400).json({
@@ -67,7 +69,7 @@ const registerController = async (req, res) => {
 
     const newUserUuid = uuidv4();
     const timestamp = new Date(Date.now());
-    const passHashed = await hashPassword(password);
+    const passHashed = await hashPassword(decryptedPass);
     const encryptedEmail = encryptAES(email);
     const encryptedPhoneNumber = encryptAES(phoneNumber);
 

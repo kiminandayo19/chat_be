@@ -15,6 +15,7 @@ const configs = {
   dbName: process.env.DB_NAME,
   secretKey: process.env.SECRET_KEY,
   salt: process.env.SALT,
+  saltRound: process.env.SALT_ROUND,
   jwtPubKey: process.env.JWT_PUB_KEY,
   jwtPvtKey: process.env.JWT_PVT_KEY,
   jwtAlg: process.env.JWT_ALG,

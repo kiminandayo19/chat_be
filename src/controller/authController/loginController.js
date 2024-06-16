@@ -2,6 +2,7 @@ import execQuery from '@services/db.js';
 import bcrypt from 'bcrypt';
 import { createTimestamp } from '@utils/dateFormat.js';
 import { generateJwt } from '@utils/jwt.js';
+import { decryptAES } from '@utils/crypto.js';
 
 const verifyPassword = async (password, hash) => {
   const match = await bcrypt.compare(password, hash);
@@ -11,8 +12,9 @@ const verifyPassword = async (password, hash) => {
 const loginController = async (req, res) => {
   try {
     const { username, password } = req.body;
+    const decryptedPass = decryptAES(password);
 
-    if (!username || !password)
+    if (!username || !decryptedPass)
       return res.status(400).json({
         code: 400,
         message: 'Username and password are required',
@@ -33,7 +35,7 @@ const loginController = async (req, res) => {
 
     const { user_id: uuid, username: user, email, phone_number: phoneNumber, password: pass } = result[0];
 
-    const isPasswordMatch = await verifyPassword(password, pass);
+    const isPasswordMatch = await verifyPassword(decryptedPass, pass);
     if (!isPasswordMatch)
       return res.status(401).json({
         code: 401,
